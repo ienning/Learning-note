@@ -1,0 +1,18 @@
+#开发中的知识点问题
+##JAVA
+##Android
+1. NDK 开发 java生成头文件问题
+Android中使用javah命令做NDK开发时，要采用的`java -classpath . -jni com.example.hellojni.HelloJni` 少了**-classpath . ** 这个会出现
+ **错误: 找不到 'com.example.hellojni.HelloJni' 的类文件。**
+ 2. NDK 引用错误
+ Android NDK 开发中链接第三方库时，使用dlsym方法时，下面的方式在C++中使用时会报错误
+ ```
+ void (*test)();
+ test = dlsym(handle, "test");
+ ```
+ 错误原因是，因为dlsym返回的是void*, 但是C++不允许隐形转换通用指针，所以会报错。可以通过下面方式改写
+ ```
+ void (*test)();
+ test = (void (*)()) dlsym(handle, "test");
+ ```
+ 
