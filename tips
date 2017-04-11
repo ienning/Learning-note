@@ -15,4 +15,64 @@ Android中使用javah命令做NDK开发时，要采用的`java -classpath . -jni
  void (*test)();
  test = (void (*)()) dlsym(handle, "test");
  ```
- 
+ 3. 编译Android内核源码SDK问题
+ 在编译android内核源码打包成SDK时正确的步骤
+ ```
+ source  build/envsetup.sh
+ lunch sdk-eng
+ make
+ make sdk
+ ``` 
+ 但是在ubuntu16.04开始的时候使用make编译出问题了，报错如下所示
+ ```
+ build/core/host_shared_library_internal.mk:44: recipe for target 'out/host/linux-x86/obj32/lib/libnativehelper.so' failed
+make: *** [out/host/linux-x86/obj32/lib/libnativehelper.so] Error 1
+ ```
+ 查了好久的资料，网上说这是新版ubuntu的一个bug，不过找到了一种解决方案
+ ```
+ cd  [source_android]/art/build/
+ vim Android.common_build.mk    //修改第119行
+ 修改前：
+ # Host.
+ ART_HOST_CLANG := false
+ ifneq ($(WITHOUT_HOST_CLANG),true)
+ # By default, host builds use clang for better warnings.
+ ART_HOST_CLANG := true
+ endif
+ 修改后：
+ # Host.
+ ART_HOST_CLANG := false
+ ifneq ($(WITHOUT_HOST_CLANG),false)
+ # By default, host builds use clang for better warnings.
+ ART_HOST_CLANG := true
+ endif
+ ```
+ 其中[source_android]是android源码根目录
+ 修改完上面的文件后再执行下面命令
+ ```
+ cp /usr/bin/ld.gold   [source_android]/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.11-4.6/x86_64-linux/bin/ld
+  ```
+ [在ubuntu16.04及以上系统，make 编译问题，参考网站](http://blog.csdn.net/u014770862/article/details/52624851)
+ [make sdk 问题，第2名作者的回答](https://groups.google.com/forum/#!topic/android-building/kePECtbvGlE) 
+  4.  Android 模拟器问题
+  报错代码
+  ```
+  libGL error: unable to load driver: r600_dri.so 
+libGL error: driver pointer missing 
+libGL error: failed to load driver: r600
+libGL error: unable to load driver: swrast_dri.so 
+libGL error: failed to load driver: swrast 
+X Error of failed request:  BadValue (integer parameter out of range for operation)   
+Major opcode of failed request:  155 (GLX)   
+Minor opcode of failed request:  24 (X_GLXCreateNewContext)   
+Value in failed request:  0x0   
+Serial number of failed request:  33   
+Current serial number in output stream:  34 
+QObject::~QObject: Timers cannot be stopped from another thread emulator: WARNING: Increasing RAM size to 1GB
+  ```
+  使用下面命令
+  ```
+  LD_PRELOAD='/usr/lib/x86_64-linux-gnu/libstdc++.so.6' ~/Android/Sdk/tools/emulator -netdelay none -netspeed full -avd Nexus_5_API_21
+  ```
+  [解决问题地址](http://stackoverflow.com/questions/35911302/cannot-launch-emulator-on-linux-ubuntu-15-10) 
+5. SDK第三库方法调用时，查看第三方的方法，使用dlopen()和dlsylm()打开第三方库时，真正的方法名可以通过nm 命令查看so动态链接库里保存的函数名。

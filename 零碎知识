@@ -1,0 +1,79 @@
+开发中的知识点问题
+JAVA
+
+Android
+
+NDK 开发 java生成头文件问题
+Android中使用javah命令做NDK开发时，要采用的java -classpath . -jni com.example.hellojni.HelloJni 少了-classpath . 这个会出现
+错误: 找不到 ‘com.example.hellojni.HelloJni’ 的类文件。
+NDK 引用错误
+Android NDK 开发中链接第三方库时，使用dlsym方法时，下面的方式在C++中使用时会报错误
+
+1
+2
+void (*test)();
+test = dlsym(handle, "test");
+错误原因是，因为dlsym返回的是void*, 但是C++不允许隐形转换通用指针，所以会报错。可以通过下面方式改写
+
+1
+2
+void (*test)();
+ test = (void (*)()) dlsym(handle, "test");
+编译Android内核源码SDK问题
+在编译android内核源码打包成SDK时正确的步骤
+
+1
+2
+3
+4
+source  build/envsetup.sh
+lunch sdk-eng
+make
+make sdk
+但是在ubuntu16.04开始的时候使用make编译出问题了，报错如下所示
+
+1
+2
+build/core/host_shared_library_internal.mk:44: recipe for target 'out/host/linux-x86/obj32/lib/libnativehelper.so' failed
+make: *** [out/host/linux-x86/obj32/lib/libnativehelper.so] Error 1
+查了好久的资料，网上说这是新版ubuntu的一个bug，不过找到了一种解决方案
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+cd  [source_android]/art/build/
+vim Android.common_build.mk    //修改第119行
+修改前：
+#Host.
+ART_HOST_CLANG := false
+ifneq ($(WITHOUT_HOST_CLANG),true)
+#By default, host builds use clang for better warnings.
+ART_HOST_CLANG := true
+endif
+修改后：
+#Host.
+ART_HOST_CLANG := false
+ifneq ($(WITHOUT_HOST_CLANG),false)
+#By default, host builds use clang for better warnings.
+ART_HOST_CLANG := true
+endif
+其中[source_android]是android源码根目录
+修改完上面的文件后再执行下面命令
+
+1
+cp /usr/bin/ld.gold   [source_android]/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.11-4.6/x86_64-linux/bin/ld
+[在ubuntu16.04及以上系统，make 编译问题，参考网站](http://blog.csdn.net/u014770862/article/details/52624851) 
+[make sdk 问题，第2名作](https://groups.google.com/forum/#!topic/android-building/kePECtbvGlE) 
