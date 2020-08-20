@@ -1017,6 +1017,8 @@ Couple Couple::operator++(int)
 
 左值引用：`&`
 
+- 无法令左值引用绑定到另外一个对象，所以右值引用必须初始化，
+
 右值引用：`&&`
 
 - 深拷贝需要频繁分配和释放内存，效率极低
@@ -1847,71 +1849,968 @@ void Company::PayRoll(Employee & e)				// 版本三
 
 #### reinterpret_cast
 
+##### 复诠转型的目的
+
+- 将任意型式的数据对象转型为目标型式，即重新解释其位序列的意义
+- 可以用于整型与指针型的互转
+
+##### 复诠转型的问题
+
+- 由程序员保证重新解释的数据对象是否有意义，编译器简单按照目标型式理解改存储区的内容
+- 注意：在64位操作系统中，指针型可能为64位，而整型可能为32位，复诠转型有可能丢失数据活的到错误结果
+
+```c++
+#include <iostream>
+using namespace std;
+
+int f(void *p)
+{
+    unsigned int n = reinterpret_cast<unsigned int>(p);
+    return n;
+}
+
+int main()
+{
+    int a[8] = {1, 2, 3, 4, 5, 6, 7,8};
+    int n = f(a);
+    cout << n << endl;
+}
+```
+
+
+
 #### const_cast
+
+##### 常量转型的目的
+
+- 用于取消或设置量的const状态
+
+##### 常量转型的问题
+
+- 如果原始数据对象不能写入，则取消常量修饰可能会导致未知结果
+
+```c++
+#include <iostream>
+
+class ConstCastTest
+{
+    public:
+    	void SetNum(int num) { _num = num; }
+    	void PrintNum() const;
+    private:
+    	int _num;
+};
+
+void ConstCastTest::PrintNum() const
+{
+    // 临时取消常量约束，修改目标对象的内容，因为（this）是指向常对象的指针
+    const_cast<ConstCastTest*>(this)->_num--;
+    std::cout << _num;
+}
+```
 
 
 
 ### 模板与型式参数化
 
+#### 转型操作
+
+- 接受目标型式作为模板参数
+- `Programmer * p = dynamic_cast<Programmer*>(e)`
+
+#### 模板工作原理
+
+- 使用template\<typename T\> 定义函数模板或类模板
+- 体化（instantiation）：使用特定的模板实际参数，生成真生的模板函数和类模板
+- 编译模板函数和模板类，生成最终程序代码
+
+#### 模板代码
+
+- 一般放在头文件中：编译器需要看到模板源代码
+
+#### 模板特点
+
+- 抽象性：模板代码高度抽象，是函数和类的模范
+- 安全性：型式检查能够发现大多数型式失配问题
+- 通用性：函数和类模板定义一次，按需生成函数和类的实体
+- 易用性：接口相对直观且高度一致
+- 效率：减少冗余代码，提升编程效率；通过编译优化，提升程序执行效率
+
+#### 模板用途
+
+- 函数模板：构造函数集，实现不依赖特定数据结构的抽象算法
+- 类模板：构造类集，实现抽象数据结构
+- 元编程：构造在编译器执行的运算，提升程序执行效率
+
+### 术语翻译
+
+dereference：引领，好于“解引用”
+
+type：型式，好于“类型”
+
+constructor：建构函数或构造函数
+
+destructor：析构函数或解构函数
+
+#### instance：定体，好于“实例”
+
+- 定体：固定不变的形态、性质、体例或体式；尽量不用“实体”，以区分entity
+- 象体：按照类型构造对象定体或对象实体的简称，好于“对象实例”
+- 函体：根据函数模板生成的函数定体或函数实体的简称
+- 类体：根据类模板生成的类型定体或类型实体的简称；不使用“型体”，因为型并不仅仅只有类
+- instantiation：定体化，简称体化，好于“实例化”
+- specialization：特体化，简称特化
+
 ### 泛型编程实践
 
+#### 标准模板库
+
+##### 标准模板库的内容
+
+- 标准模板类：附属、序偶
+- 迭代器
+- 标准容器：向量、表、栈、队列、集合、映射等
+- 标准算法：查找、排序等
+
+##### 标准模板库型式的使用方法
+
+- “<>”：模板名称<数据对象基型式> 数据对象名称；
+- 示例一：`complex<double> a(1.0, 2.0);`
+- 示例二：`pair<string, string> name("Zhang", "San");`
+- 示例三：`vector<int> v(8);`
+
+##### 复数
+
+###### 一般说明
+
+- 头文件："complex"
+- 模板名：complex<>
+- 基型式：float、double、long double
+- 首选double，float精度太低，long double 已废弃
+
+###### 实部与虚部
+
+- 成员函数real()与imag()
+
+###### 复数操作
+
+- 复数全部操作均可以按照数学格式进行
+- cout、cin均已重载：格式为(real, imag)
+
+##### 序偶
+
+###### 一般说明
+
+- 头文件：“utility”
+- 模板名：pair<>
+- 用于表示总是成对出现的两个对象
+- 示例一：`pair<int, double> a(1, 1.0);`
+- 示例二：`pair<string, string> name("Zhang", "San");`
+
+###### 使用规则
+
+- 公开的数据成员：first、second
+- 示例：cout << name.first << "," << name.second;
+- 偶序比较：先比较first大小，同时比较second大小
+- make_pair：构造序偶的辅助函数
+- 示例：`pair<int, double> a; a = make_pair(1, 1.0);`
+
+##### 向量
+
+###### 向量的目的
+
+- 替代数组，可以像数组一样使用向量
+
+###### 向量的使用
+
+- 定义格式：vector<int> v(8); 	//包含8个整数元素
+- operator[]：已重载，使用格式v[i]访问第i个元素
+- 向量可以整体赋值
+- size()：返回向量中元素数目
+- capacity()：返回向量当前可存储的最多元素数目
+- clear()：删除向量所有元素，但不释放向量本身
+- resize(int newsize)：重新设置向量容量
+
+##### 迭代器
+
+###### 迭代器的分类
+
+- 输入迭代器：提供对象的只读访问
+- 输出迭代器：提供对象的只写访问
+- 前向迭代器：提供对象的正向（递增）读写访问
+- 双向迭代器：提供对象的正向与反向（递增递减）读写访问
+- 随机访问迭代器：提供对象的随机读写访问
+
+###### 指针作为迭代器
+
+```c++
+// 调用标准模板库的find()函数查找数组元素
+#include <iostream>
+#include <algorithm>
+using namespace std;
+const int size = 16;
+int main
+{
+    int a[size];
+    for (int i = 0; i < size; i++) a[i] = i;
+    int * ip = find(a, a + size, key);
+    if (ip == a + size )	// 不要使用NULL做指针测试，直接使用过尾值
+        cout << key << " not found" << endl;
+    else
+        cout << key << "found." << endl;
+    return 0;
+}
+```
+
+###### 向量迭代器
+
+```c++
+// 使用迭代器操作向量
+#include <iostream>
+#include <algorithm>
+#inlcude <vector>
+using namespace std;
+int main()
+{
+    int key = 7;
+    vector<int> iv(10);
+    for(int i = 0; i < 10; i++)
+        iv[i] = i;
+    vector<int>::iterator it, head = iv.begin(), tail = iv.end();
+    it = find(head, tail, key);
+    if(it != tail)
+        cout << "Vector contains the value" << key << endl;
+    else
+        cout << "Vector does NOT contain the value" << key << endl;
+    return 0;
+};
+```
+
+###### 常迭代器
+
+常迭代器：若不想通过迭代器修改目标对象值，定义迭代器常量
+
+示例：
+
+- `const vector<int>::iterator it;`
+- 非法操作：*it = 10;     // 不能修改常迭代器指向的对象
+
+###### 流迭代器
+
+**使用迭代器访问流**
+
+- 将输入输出流作为容器
+
+**使用方式：定义流迭代器对象**
+
+- 示例一：`ostream_iterator<int> oit( cout, " ");`
+- 示例二：（从cin获取数据）：`istream_iterator<int> iit(cin);`
+- 示例三：（使用空指针创建流结束迭代器）：`istream_iterator<int> iit;`
+- 凡是可以出现迭代器参数的标准算法都可以使用
+
+###### 输出流迭代器
+
+```c++
+#include <iostream>
+#include <iterator>
+#include <algorithm>
+#include <vector>
+#include "random.h"
+using namespace std;
+const int size = 8;
+const int lower_bound = 10;
+const int upper_bound = 99;
+
+void Dispaly(vector<int> & v, const char *s)
+{
+    cout << endl << s << endl;
+    vector<int>::iterator head = v.begin(), tail = v.end();
+    ostream_iterator<int> oit( cout, ";");
+    copy(head, tail, oit);
+    cout << endl;
+}
+
+int main()
+{
+    vector<int> a(size);
+    for(int i = 0; i < size; ++i)
+        a[i] = GenerateRandomNumber(10, 99);
+    Display(a, "Array generated:");
+    vector<int>::iterator head = a.begin(), tail = a.end();
+    sort( head, tail);
+    Display(a, "Arraysorted:");
+    reverse( head, tail );
+    Dispaly( a, "Array reversed:");
+    return 0;
+}
+```
+
+###### 输入迭代器
+
+```c++
+#include <iostream>
+#include <iterator>
+#include <algorithm>
+#include <vector>
+using namespace std;
+int main()
+{
+    vector<int> v(4);
+    vector<int>::iterator it = v.begin();
+    cout << "Enter 4 int s separated by spaces & a char:\n";
+    istream_iterator<int> head(cin), tail;
+    copy( head, tail, it);
+    cin.clear();
+    cout << "vector=";
+    for( it = v.begin(); it != v.end(); it++)
+        cout << *it << "";
+    cout << endl;
+    return 0;
+}
+```
+
+###### 表
+
+表：标准模板库中的双向链表
+
+**表的使用**
+
+- 定义包含Point对象的容器：list\<point\>  pts(8);
+-  插入：`pts.insert(pts.begin(), Point(1, 2));`
+- 表头插入：`pts.push_front(Point(1, 2));`
+- 插入：`pts.insert(pts.end(), Point(1, 2));`
+- 表尾插入：`pts.push_back(Point(1, 2));`
+- 定义包含Point的指针容器：`list<Point*> ppts(8);`
+- 插入：`ppts.insert(ppts.begin(), new Point(1,2));`
+- 插入：`ppts.insert(ppts.end, new Point(1,2));`
+- 删除：`delete ppts.front(); ppts.remove(ppts.front());`
+- 判断表是否为空：`if(pts.empty()) cout << "Empty!";`
+
+**表与迭代器**
+
+- 迭代器可以和表协同工作，方式与向量相同
+
+  ```c++
+  list<int> a<8>;
+  list<int>::iterator it;
+  for(it = a.begin(); it!= a.end(); it++)
+      *it = GenerateRandomNumber(10, 99);
+  ```
+
+**表排序**
+
+- 直接使用表的成员函数：a.sort();	// 默认升序
+- 降序排序之一：升序排序后调用成员函数reverse()
+
+- 降序排序之二传入函子`greater_equal<int>()`：`a.sort(greater_equal<int>());`
+
+##### 标准算法
+
+- 查找算法
+- 排序算法
+- 删除和替换算法
+- 排列组合算法
+- 算术算法
+- 关系算法
+- 集合算法
+- 生成和编译算法
+- 堆算法
+- adjacent_find：查找两个相等或满足特定条件的相邻元素
+- all_of：当给定区间内的全部元素均满足条件时返回true
+- any_of：当给定区间内至少一个元素满足条件时返回true
+- binary_search：折半查找，原始数据集已序
+- copy：赋值给定区间内的全部元素
+- copy_backward：反向复制给定区间内全部元素
+- copy_if：复制给定区间满足特定条件的元素
+- copy_n：复制特定位置处开始的指定数目的元素
+- count：返回给定区间内匹配特定值的元素个数
+- count_if：返回给定区间内匹配特定条件的元素个数
+
+##### 标准函子
+
+###### 算术函子
+
+- `plus<T>, minus<T>, multiplies<T>, divides<T>, modulus<T>, negate<T>`
+
+###### 关系函子
+
+- `equal_to<T>, not_equal_to<T>, greater<T>, greater_equal<T>, less<T>, less<equal>`
+
+###### 逻辑函子 
+
+- `logical_and<T>, logical_or<T>, logical_not<T>`
+
+#### 函数模板
+
+##### 函数模板的目的
+
+- 设计通用函数，一适应广泛的数据型式
+
+##### 函数模板的定义格式
+
+- `template<模板型式参数列表> 返回值型式 函数名称(参数列表);`
+- 原型：`template<class T> void Swap(T& a, T& b);`
+- 实现：`template<class T> void Swap(T& a, T& b) { ... }`
+
+##### 函数模板的体化与特化
+
+- 针对特定型函数，在声明或第一次调用该函数模板时体化
+- 每次体化都形成针对特定型参数的重载函数版本
+- 文件最终只保留特定型参数的一份体化后的函体
+- 显示体化主要用于库设计；显示特化覆盖体化的同型函体
+
+```c++
+// 函数模板
+template< class T > void f(T t) { /*......*/ }
+
+// 显式体化：使用显式的长整型模板参数
+template void f<long>(long n);
+// 显式体化：使用d的型式推导模板参数型式
+template void f(double d);
+
+// 显式特化：使用显式的整型参数
+template<> void f<int> (int n);
+
+// 显示特化：使用c的型式推到模板参数型式
+template<> void f(char c);
+
+// example
+template< class T > void Swap(T & a, T & b)
+{
+    T t;
+    t = a, a = b, b = t;
+}
+
+int main()
+{
+    int m = 11, n = 7; char a = 'A', b = 'B'; double c = 1.0, d = 2.0;
+    Swap(m, n);
+    Swap(a, b);
+    Swap(c, d);
+    return 0;
+}
+```
+
+#### 函子
+
+编写函数，求某个数据集的最小元，元素型式为T
+
+- 实现策略：使用函数指针作为回调函数参数
+- 实现策略：使用函子( function object, functor )作为回调函数参数
+
+```c++
+// 函数指针实现
+template< typename T >
+const T & Min( const T * a, int n, bool (*comparer)(const T&, const T&))
+{
+    int index = 0;
+    for ( int i = 1; i < n; i++)
+    {
+        if ( conparer(a[i], a[index] ) )
+            index = i;
+    }
+    return a[idnex];
+}
+
+// 使用函子实现
+
+```
+
+##### 函子的目的
+
+- 功能上：类似函数指针
+- 实现上：重载函数调用操作符，必要时重载小于比较操作符
+
+##### 函子的优点
+
+- 函数指针不能内联，而函子可以，效率更高
+- 函子可以拥有任意数量的额外数据，可以保存结果和状态，提高代码灵活性
+- 编译时可对函子进行型式检查
+
+##### 函子实现
+
+```c++
+// 使用方法
+int a[8] = { 2, 3, 1, 6, 4, 5, 8, 7};
+int min = Min(a, 8, Comparer<int>());	// 构造匿名函子作为函数参数
+
+template< typename T > class Comparer
+{
+    public:
+    	// 确保型式T已存在或重载operator
+    	bool operator()( const T & a, const T & b) { return a < b; }
+};
+
+template< typename T, typename Comparer > const T & Min( const T * a, int n, Comparer comparer){
+    int index = 0;
+    for(int i = 1; i < n; i++)
+        if(comparer(a[i], a[index]))
+            index = i;
+    return a[index];
+}
+```
+
+#### 完美转发
+
+##### 完美转发的意义
+
+- 库的设计者需要设计一个通用函数，将接收到的参数转发给其它函数
+- 转发过程中，所有参数保持原先语义不变
+
+##### 完美转发的实现策略
+
+- 当需要同时提供移动语义与拷贝语义时，要求重载大量建构函数，编程量巨大，易出错
+- 右值引用于函数模板相互配合，可以实现完美转发，极大降低代码编写量
+
+```c++
+class A
+{
+    public:
+    	A( const string & s, cosnt string & t): _s(s), _t(t) { }
+    	A( const string &s, string && t): _s(s), _t(move(t)) { }
+    	A( string && s, string && t): _s(move(s)), _t(t) { }
+    	A( string && s, string && t): _s(move(s)), _t(move(t)) { }
+    private:
+    	string _s, _t;
+};
+
+int main()
+{
+    string s1("Hello");
+    const string s2("World");
+    A a1( s1, s2 );
+    A a2( s1, string("Bingo") );
+    A a3( string("Good"), s2);
+    A a4( string("Good"), string("Bingo") );
+    return 0;
+}
+
+// 使用完美转发
+class A
+{
+    public:
+    	// 根据实际参数型式生成不同的左值或右值引用的建构函数版本
+    	// T1或T2可以为不同型，此处相同仅为示例
+    	// 实参推演时，引用折叠机制
+    	// 当形式参数为T&&型时，当且仅当实际参数为右值或右值引用时，
+    	// 实际参数型式才为右值引用
+    	// 引用折叠机制与const/volatile无关，保持其参数性质不变
+    	// std::forward<T>(t)转发参数的右值引用T&&
+    template<typename T1, typename T2> A(T1 && s, T2 && t ): _s(std::forward<T1>(s)), _s(std::forward<T2>(t)) { }
+    private:
+    	std::string _s, _t;
+};
+
+```
+
+####  类模板
+
+##### 类模板的目的
+
+- 设计通用的类型式，以适应广泛的成员数据型式
+
+##### 类模板的定义格式
+
+- `template<> class 类名称 { ... };`
+
+- 原型：`template<typename T> class A;`
+
+##### 类模板成员
+
+- 像普通类的成员一样定义
+- 定义在类中或类外均可，后者需要在类名后列些模板参数，以区分非模板类的成员函数
+- `template<typename T> T A<T>::f(u)`
+
+##### 类成员函数的模板
+
+- 成员函数可以使用其他模板
+
+```c++
+template< typename T > class A
+{
+    public:
+    	template<typename U> T f( const U & u);
+};
+// 类的模板型式要在韩式模板型式前面的
+template<typename T> template<typename U> T A<T>::f( const U & u)
+{
+    
+}
+```
+
+##### 类模板的体化
+
+- 与函数模板不同，类模板体化时必须给定模板实际参数，如：`A<T> a;`
+- 类模板体化时，编译器生成模板类或成员函数的代码；成员函数在调用时体化，虚函数在类构造时体化
+
+##### 类模板的显示体化
+
+- `template class A<int>;`
+- 解决模板库的创建问题，库的使用者可能没有体化的机会，而未体化的模板定义不会出现在目标文件中
+- 显式体化类模板后，显式体化其构造函数函数
+- 其它成员函数可显式体化，也可不显示体化
+
+##### 类模板的显示特化
+
+- 使用特定的型或值显式特化类模板，以定制类模板代码，如：`template<> class A<char> {...};`
+- 显式特化版本覆盖体化版本
+- 显式特化并不要求与原始模板相同，特化版本可以具有不同的数据成员或成员函数
+- 类模板可以部分特化，结果仍是类模板，以支持类模板的部分定制
+
+##### 类模板的缺省模板参数
+
+- 与函数模板相同，类模板可以具有缺省模板参数
+
+```c++
+// 队列
+#include <iostream>
+#include <cstdlib>
+// 空队列异常类
+class EQueueEmpty { };
+// 队列项类前置声明
+template< typename T > class JuQueueItem;
+// 队列类
+template< typename T> class JuQueue
+{
+    public:
+    	JuQueue(): _head(NULL), _tail(NULL) { }
+    	virtual ~JuQueue();
+    	virtual void Enter( const T & item );
+    	virtual T Leave();
+    	bool IsEmpty() const { return _head == 0; }
+    private:
+    	JuQueueItem<T>* _head, *_tail;
+};
+
+// 队列项类，单项链表结构
+template< typename T > class JuQueueItem
+{
+    friend class JuQueue<T>;
+    public:
+    	JuQueueItem( const T & item ): _item(item)._next(0) { }
+    private:
+    	T _item;
+    	JuQueueItem<T>* _next;
+};
+
+// 队列类析构函数
+template< typename T > JuQueue<T>::~JuQueue()
+{
+    while(!IsEmpty())
+        Leave();
+}
+// 入队
+template< typename T > void JuQueue<T>::Enter( const T & item)
+{
+    JuQueueItem<T> *p = new JuQueueItem<T>(item);
+    if ( IsEmpty() )
+        _head = _tail = p;
+    else
+        _tail->_next = p, _tail = p;
+}
+// 出列
+template< typename T > T JuQueue<T>::Leave()
+{
+    if ( IsEmpty() )
+        throw EQueueEmpty();
+    JuQueueItem<T> *p = _head;
+    T _retval = p->_item;
+    _head = _head->_next;
+    delete p;
+    return _retval;
+}
+
+
+int main()
+{
+    JuQueue<int> * p = new JuQueue<int>;
+    for ( int i = 0; i < 10; i++)
+        p->Enter(i);
+    std::cout << p->Leave() << std::endl;
+    
+    int *r = new int(10), * q = new int(20);
+    JuQueue<int*> * t = new JuQueue<int*>;
+    t->Enter(r);
+    t->Enter(q);
+    int *s = t->Leave();
+    std::cout << *s << std::endl;
+    
+    return 0;
+}
+```
+
+#### 元编程
+
+##### 什么是元编程（metaprogramming）？
+
+- 利用模块可以进行编译器计算（数值计算、型式计算和代码计算）的特点进行程序设计
+
+##### 为什么可以进行元编程？
+
+- C++是两层语言：执行编译器计算的代码称为静态代码，执行运行期计算的代码称为动态代码
+- 模板可用于函数式编程（functional programming）：强调抽象计算，重视模块华，使用递归控制流程
+- 模板是图灵完备的：理论上，模板可以执行任何计算任务
+
+##### 为什么需要元编程
+
+- 编译器计算可以是代码更通用，更易用，提升程序执行性能
+
+##### 元编程缺点
+
+- 相对结构化编程，编译效率极低
+- 代码丑陋不堪，阅读难、调试难、维护难，易导致戴拿膨胀
+
+##### 元编程可以做什么？
+
+- 数值序列计算、素性判断、控制结构、循环展开、形式判定、表达式、编译器多态、特性、策略、标签、元容器、......
+- 注：对操作系统编程而言，元编程意义不大
+
+```c++
+// Fibonacci数列
+#include <iostream>
+// 类模板，计算Fibonacci数列的第i项
+template< int i = 1 > class Fibonacci
+{
+    public:
+    	enum {value = Fibonacci<i-1>::value + Fibonacci<i-2>::value };
+};
+// 类模板特化，递归终止条件
+template<> class Fibonacci<2> { public: enum { value = 1}; };
+template<> class Fibonacci<1> { public: enum { value = 1}; };
+
+int main()
+{
+    std::cout << "Fib(" << 1 << ") = " << Fibonacci<1>::value << std::endl;
+    std::cout << "Fib(" << 2 << ") = " << Fibonacci<2>::value << std::endl;
+    std::cout << "Fib(" << 3 << ") = " << Fibonacci<3>::value << std::endl;
+    std::cout << "Fib(" << 4 << ") = " << Fibonacci<4>::value << std::endl;
+    return 0;
+}
+```
+
+```c++
+// 素数枚举
+#include <iostream>
+#include <iomainip>
+// 递归计算p是否为素数；若是，索性判定结论answer为1，否则为0；
+template< int p, int i > struct PrimeMagicCube
+{
+    enum { answer = p % i && PrimeMagicCube<p, i - 1>::answer };
+};
+// 素数魔方类模板部分特化，递归终止条件，除数为1，没有找到因子
+template< int i > struct PrimeMagicCube<P, 1> { enum { answer = 1}; };
+// 数值类模板，输出不大于i的全部素数
+template< int i > struct Number {
+    Number<i-1> a;	// 递归定义数值对象
+    enum { answer = PrimeMagicCube<i, i-1>::answer };
+    void IsPrime()
+    {
+        // 先降序输出全部素数，然后升序输出全部数值素性序列
+        if(answer)
+            std::cout << std::setw(4) << std::right << i;
+        a.IsPrime();	// 递归调用，计算下一个数值的素性
+        std::cout << std::setw(2) << answer;
+    }
+};
+// 数值类模板特化，终止于2
+template<> struct Number<2>
+{
+    enum { answer = 1 };
+    void IsPrime()
+    {
+        std::cout << std::setw(4) << std::right << 2 << std::endl;
+        std::cout << std::setw(2) << answer;
+    }
+};
+
+int main()
+{
+    Number<100> a;
+    std::cout << std::endl;
+}
+```
+
+#### 事件机制
+
+##### 事件基本概念
+
+- 操作系统或应用程序内部发生某件事，程序的某个组件需要响应该时间，并进行特定处理
+
+##### 面向对象架构中，事件响应函数最可能为成员函数
+
+- 问题：指向类成员函数的指针不能装换为哑型指针void\*，也不能随意转换为指向另一个类的成员函数的指针
+- 解决方案：使用指向指向类成员函数的指针的指针
+
+##### 实现策略：事件委托模型
+
+- Event类模板：管理事件响应者对象，实现事件多播
+- EventResponsor类模板：响应对象与响应者行为配对
+
+```c++
+#include <iostream>
+#include <vector>
+using namespace std;
+
+// 空类，用于指代响应者对象
+class Empty { };
+
+// 事件响应者类模板，保存特定时间的响应者与响应行为
+template< typename EventAction > class EventResponsor
+{
+    public:
+    	EventResponsor(): actor(NULL), action(NULL) { }
+    	EventResponsor( Empty * actor, EventAction * action): actor(actor), action(action) { }
+    	friend bool operator==( const EventResponsor & lhs, const EventResponsor & rhs )
+        {
+            return lhs.actor == rhs.actor && *lhs.action == *rhs.action;
+        }
+    public:		// 公开的数据成员，以方便使用者
+    	EventAction* action;	// 指向成员函数的指针的指针
+    	Empty* actor;  	
+};	// template<typename EventAction> class EventResponsor
+
+// 事件类模板，用于管理特定事件的所有响应者
+template< typename EventAction > class Event
+{
+    public:
+    	typedef vector< EventResponsor< EventAction > > EventResponsors;
+    	typedef typename vector< EventResponsor<EventAction> >::iterator EventIterator;
+    
+    public:
+    	virtual ~Event()
+        {
+            for(EventIterator it = this->_ers.begin(); it != this->_ers.end(); ++it)
+            {
+                delete it->action, it->action = NULL;
+            }
+        }
+    	EventResponsors & GetResponsors() { return this->_ers; }
+
+
+	// 事件绑定，将实际响应者和响应行为挂接到响应者对象上
+	template< typename Responsor, typename Action > void Bind( Responsor * actor, Action action)
+	{
+ 	    Action * act = new Action( action );
+    	EventResponsor<EventAction> er( (Empty*)actor, (EventAction*)act);
+    	bool unbound = true;
+    	for( EventIterator it = this->_ers.begin(); it != this->_ers.end(); it++)
+    	{
+        	if(*it == er)	// 发现重复的事件响应者，说明已绑定
+        	{
+            	unbound = false;
+            	break;
+        	}
+    	}
+    	if( unbound )
+        	this->_ers.push_back( er );
+    	else
+        	delete er.action, er.action = NULL;
+	}
+
+	// 接触事件绑定，删除事件响应者对象
+	template< typename Responsor, typename Action > void UnBind( Responsor* actor, Action action )
+	{
+	    Action * act = new Action( action );
+	    EventResponsor<EventAction> er( (Empty*)actor, (EventAction*)act );
+    	for( EventIterator it = this->_ers.begin(); it != this->_ers.end(); ++it)
+    	{
+        	if(*it == er)	// 找到待删除的事件响应者对象
+        	{
+            	delete it->action, this->_ers.erase(it);
+            	break;
+        	}
+    	}
+    	delete er.action, er.action = NULL;
+	}
+	private :
+    	EventResponsors _ers;
+}; // template<typename EventAction> class Event
+
+// 定义事件委托模型，指向类成员函数的指针
+typedef Empty EventDelegator;
+typedef void ( EventDelegator::*ValueChanged )(int value, void * tag );
+
+// 触发者
+class Trigger
+{
+    public:
+    	Trigger(): _value(0) { }
+    	void SetValue( int value, void * tag );
+    	int GetValue() { reutnr _value; }
+    public:
+    	// 值变化事件，公开属性，方便在类外设定
+    	Event<ValueChanged> value_changed;
+    private:
+    	int _value;
+};
+
+// 设定值，遍历特定事件的响应者对象列表，逐一触发值变更事件
+void Trigger::SetValue(int value, void * tag)
+{
+    if(_value == value)
+        return;
+    _value = value;
+    Event<ValueChanged>::EventResponsors ers;
+    ers = this->value_changed.GetResponsors();
+    if(!ers.empty() )
+    {
+        Event<ValueChanged>::EventIterator it;
+        for(it = ers.begin(); it != ers.end(); ++it){
+            // 其实调用的是actor对象的成员函数的指针，然后加个括号就是普通函数了
+            ((it->actor)->*(*(it->action)))(value, tag ); // 响应事件
+        }
+    }
+}
+
+// 行动者
+class Actor
+{
+    public:
+   		// 侦听事件，绑定本对象的事件响应函数到侦听的事件
+    	void Listen( Trigger * trigger)
+        {
+            // Bind()第二个参数是第响应值变更事件的那个事件响应函数的入口地址。
+        	trigger->value_changed.Bind( this, & Actor::OnValueChanged);    
+        }
+    
+    	// 停止侦听，从侦听的事件中取消绑定本对象的事件响应活动
+    	void Unlisten( Trigger * trigger ) 
+        { trigger->value_changed.Unbind( this, &Actor::OnValueChanged); }
+    	
+    	// 值变更事件的响应函数
+    	void OnValueChanged( int value, void * tag )
+        { cout << reinterpret_cast<char*>(tag) << value << "." << endl; }
+}
+
+int main()
+{
+    const char * s = "Now  the value is";
+    Trigger t;
+    Actor a1, a2;
+    
+    a1.listen(&t);
+    a2.listen(&t);
+    
+    cout << "Listening..." << endl;
+    t.SetValue( 10, reinterpret_cast<void*>( const_cast<char*>(s) ) );
+    
+    a2.Unlisten(&t);
+    cout << "Listening again..." << endl;
+    t.SetValue( 20, reinterpret_cast<void*>( const_cast<char*>(s) ) );
+    
+    return 0;
+}
+```
+
+
+
 ### 编程实践
 
+###  第一题
 
+使用类模板实现自己的抽象链表类
 
-## 程序环境
+### 第二题
 
-### 程序执行环境
-
-### 输入输出
-
-### 文件系统
-
-### 设备
-
-### 库
-
-### makefile文件
-
-### 编程实践
-
-
-
-## 进程
-
-### 进程基本概念
-
-### 信号
-
-### 进程管理
-
-### 进程间通信
-
-### 进程池
-
-### 编程实践
-
-
-
-## 线程
-
-### 线程基本概念
-
-### 线程管理
-
-### 线程同步机制
-
-### C++11线程库
-
-### 编程实践
-
-
-
-## 网络
-
-### Internet网络协议
-
-### 套接字
-
-### 编程实践
+按照Black-Scholes期权定价模型，衍生品。。。
 
