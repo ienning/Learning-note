@@ -311,7 +311,7 @@ template<typename T> void Vector<T>::sort( Rank lo, Rank hi )
             heapSort( lo, hi );			// 堆排序
             break;
         case 5:
-            heapSort( lo, hi );			// 快速排序
+            quickSort( lo, hi );			// 快速排序
             break;
         case 6:
             insertionSort( lo, hi );		// 插入排序
@@ -469,11 +469,671 @@ template<typename T> struct ListNode
 }
 ```
 
+## 栈与队列
+
+### 括号匹配的递归实现
+
+```c++
+void trim( const char exp[], int& lo, int& hi )
+{
+    // 删除exp[lo, hi]不含括号的最长前缀、后缀
+    while((lo <= hi ) && (exp[lo] != "(") && (exp[lo] != ")") )
+        lo++;
+    while((lo <= hi) && (exp[hi] != "(") && (exp[hi] != ")") )
+        hi--;
+}
+
+int divide( const char exp[], int & lo, int& hi )
+{
+    // 切分exp[lo, hi]，使exp匹配仅当子表达式匹配
+    int mi = lo;
+    int crc = 1;	// crc为[lo, mi]范围内左、右括号数目之差
+    while( ( 0 < crc ) && ( ++mi < hi ) )	// 逐个检查各字符，知道左、右括号数目相等，或者越界
+    {
+        if( exp[mi] == ")" ) crc--;
+        if( exp[mi] == "(" ) crc++;
+    }
+    return mi;
+    
+}
+
+bool paren( const char exp[], int lo, int hi )
+{	// 检查表达式exp[lo, hi]是否匹配括号（递归版）
+    trim( exp, lo, hi );	// 先匹配左右两边的括号
+    if( lo > hi )
+        return true;
+    if( exp[lo] != "(" )	// 检查左边是否为左括号
+        return false;
+    if( exp[hi] != ")" )	// 检查右边是否为右括号
+        return false;
+    int mi = divide( exp, lo, hi );	// exp[lo, mi]是完整的括号对。当然前提是mi < hi情况下。
+    if( mi > hi )
+        return false;
+    return paren( exp, lo + 1, mi - 1 ) && paren( exp, mi + 1, hi );
+}
+
+bool paren( const char exp[], int lo, int hi )
+{	// 迭代实现
+    Stack<char> S;
+    for( int i = lo; i <= hi; i++ )
+    {
+        switch( exp[i] )
+        {
+            case '(':
+            case '[':
+            case '{':
+                S.push( exp[i] );
+                break;
+            case ')':
+                if( ( S.empty() ) || ( S.pop() != '(' ) )
+                    return false;
+                break;
+            case ']':
+                if( ( S.empty() ) || ( S.pop() != '[' ) )
+                    return false;
+                break;
+            case '}':
+                if( ( S.empty() ) || ( S.pop() != '}' ) )
+                    return false;
+                break;
+            default:
+                break;
+        }
+    }
+    return S.empty();
+}
+
+float evaluate( char* S, char*& BPN )
+{	// 对（已剔除空白格的）表达式S求值，并转换为逆波兰式RPN
+    Stack<float> opnd;
+    Stack<char> optr;
+    optr.push( '\0' );
+    while( !optr.empty() )
+    {
+        if( isDigit( *S ) )
+        {
+            readNumber( S, opnd );
+            append( RPN, opnd.top() );
+        }
+        else
+        {
+            switch( orderBetween( optr.top(), *S ) )
+            {
+                case '<':
+                    optr.push( *S );
+                    S++;
+                    break;
+                case '=':
+                    optr.pop();
+                    S++;
+                    break;
+                case '>':
+                    {
+                    char op = optr.pop();
+                    append( RPN, op );
+                    if( '!' == op )
+                    {
+                        float pOpnd = opnd.pop();
+                        opnd.push( calcu( op, pOpnd ) );
+                    }
+                    else
+                    {
+                        float pOpnd2 = opnd.pop(), pOpnd1 = opnd.pop();
+                        opnd.push( calcu( pOpnd1, op, pOpnd2 ) );
+                    }
+                    break;
+                    }
+                default:
+                    exit( -1 );
+            }
+
+        }
+    }
+    
+}
+```
+
+### 试探回溯法
+
+```c++
+struct Queen
+{
+    int x, y;
+    Queen( int xx = 0, int yy = 0 ): x( xx ), y( yy ) { };
+    bool operator== (Queen const& q ) const {
+        return ( x == q.x ) || ( y == q.y ) || ( x + y == q.x + q.y ) || ( x - y == q.x - q.y );
+    }
+    bool operator!=( Queen const& q ) const { return !( *this == q ); }
+};
+
+void placeQueens( int N )
+{
+    Stack<Queen> solu;
+    Queen q( 0, 0 );
+    do
+    {
+        if ( N <= solu.size() || N <= q.y )
+        {	// 如果该行没有位置可以放Queen，就返回上一行，对上一行的Queen进行列增加
+            q = solu.pop();
+            q.y++;
+        }
+        else
+        {
+            while( ( q.y < N ) && ( 0 <= solu.find( q ) ) )
+            {	// 遍历每列，找到与前面不相同的Queen
+                q.y++;
+                nCheck++;
+            }
+            if( N > q.y )
+            {	// 开始进入下一行
+                solu.push( q );
+                if( N <= solu,size )
+                    nSolu++;
+                q.x++;
+                q.y = 0;
+            }
+        }
+    } while( ( 0 < q.x ) || ( q.y < N ) );
+}
+```
+
+### 迷宫算法
+
+```c++
+typedef enum { AVAILABLE, ROUTE, BACKTRACKED, WALL } Status;
+
+typedef enum { UNKNOWN, EAST, SOUTH, WEST, NORTH, NO_WAY } ESWN;
+
+inline ESWN nextESWN( ESWN eswn ) { return ESWN( eswn + 1 ); }
+
+struct Cell
+{
+    int x, y;
+    Status status;
+    ESWN incoming, outgoing;
+};
+
+#define LABY_MAX 24
+Cell laby[LABY_MAX][LABY_MAX];
+
+
+inline Cell* neighbor( Cell* cell )
+{
+    switch( cell-> outgoing )
+    {
+        case EAST : return cell + LABY_MAX;
+        case SOUTH: return cell + 1;
+        case WEST: return cell - LABY_MAX;
+        case NORTH: return cell - 1;
+        default:
+            exit(-1);
+    }
+}
+
+inline Cell* advance( Cell* cell )
+{
+    Cell* next;
+    switch( cel-> outgoing )
+    {
+        case EAST:
+            next = cell + LABY_MAX;
+            next->incoming = WEST;
+            break;
+        case SOUTH:
+            next = cell + 1;
+            next->incoming = NORTH;
+            break;
+        case WEST:
+            next = cell - LABY_MAX;
+            next->incoming = ESAT;
+            break;
+        case NORTH:
+            next = cell - 1;
+            next->incoming = SOUTH;
+            break;
+        default:
+            exit(-1);
+    }
+    return next;
+}
+
+bool labyrinth( Cell Laby[LABY_MAX][LABY_MAX], Cell* s, Cell* t)
+{
+    if( ( AVAILABLE != s->status ) || ( AVAILABLE != t->status ) ) return false;
+    Stack<Cell*> path;
+    s->incoming = UNKNOWN;
+    s->status = ROUTE;
+    path.push( s );
+    do
+    {
+        Cell* c = path.top();
+        if( c == t ) return true;
+        
+        while( NO_WAY > ( c->outgoing = nextESWN( c->outgoing ) ) )		// 寻找出去的方向
+            if( AVAILABLE == neighbor(c)->status )
+                break;
+        if( NO_WAY <= c->outgoing )		// 该路口没有方向选择，进行回溯，将原来标记的status值为ROUTE改为BACKTRACKED
+        {
+            c->status = BACKTRACKED;
+            c = path.pop();
+        }
+        else
+        {	// 将下一个可利用的点添加到path，并标记为路径
+            path.push( c = advance( c ) );
+            c->outgoing = UNKNOWN;
+            c->status = ROUTE;
+        }
+    } while( !path.empty() );
+    return false;
+}
+```
+
 
 
 ## 二叉树
 
+```c++
+// 二叉树的遍历
+
+// 先序遍历（递归版）
+
+// 先序遍历（迭代版）
+
+// 中序遍历（递归版）
+
+// 中序遍历（迭代版）
+template<typename T, typename VST> void travIn_I2( BinNodePosi(T) x, VST& visit )
+{
+    Stack<BinNodePosi(T)> S;
+    while(true)
+    {
+        if(x)
+        {
+            S.push(x);
+            x = x->lc;
+        }
+        else if(!s.siEmpty())
+        {   
+            x = S.pop();
+        	visit(x);
+            x = x->rc;
+        }
+        else
+            break;
+    }
+}
+// 后序遍历（递归版）
+
+// 后序遍历（迭代版）
+
+```
+
+
+
+### Huffman编码
+
+```c++
+// PFC编码树 
+#include "../BinTree/BinTree.h";
+typedef BinTree<char> PFCTree;
+
+#include "../Vector/Vector.h"
+typedef Vector<PFCTree*> PFCForest;
+
+#include "../Bitmap/Bitmap.h"		// 练习2-34的代码
+#include "../Skiplist/Skiplist.h"	// 引入Skiplist式词典结构实现
+typedef Skiplist<char, char*> PFCTable;	// PFC编码表，词条格式为：（key = 字符， value = 编码串）
+
+
+#define N_CHAR (0x80 - 0x20)		// 只考虑可打印字符
+
+
+int main(int argc, char* argv[])
+{
+    PFCForest* forest = initForest();
+    PFCTree* tree = generateTree(forest);
+    release(forest);
+    PFCTable* table = generateTable(tree);
+    for( int i = 1; i < argc; i++)
+    {
+        Bitmap codeString;
+        int n = ecode( table, codeString, argc[i] );	// 根据编码表生成（长度为n）
+        decode(tree, codeString, n);					// 利用编码树，对长度为n的二进制编码串解码（直接输出）
+    }
+    release(table);
+    release(tree);
+    return 0;
+}
+
+PFCForest* initForest()
+{
+    PFCForest* forest = new PFCForest;
+    for ( int i = 0; i < N_CHAR; i++ )
+    {
+        forest.insert(i, new BinTree());
+        (*forest)[i]->insertAsRoot( 0x20 + i );
+    }
+    return forest;
+}
+
+PFCTree* generateTree( PFCForest* forest )
+{
+    srand((unsigned int) time(NULL));
+    while( 1 < forest->size() )
+    {
+        PFCTree* s = new PFCTree;
+        s->insertAsRoot('^');
+        Rank r1 = rand() % forest->size();
+        s->attachAsLC(s->root(), (*forest)[r1]);
+        forest->remove(r1);
+        Rank r2 = rand() % forest->size();
+        s->attachAsRC(s->root(), (*forest)[r2]);
+        forest->remove(r2);
+        forest->insert(forest->size(), s);
+    }
+    return (*forest)[0];	// 至此forest中只存在一棵树，即全局编码树
+}
+
+// 通过遍历获取各个字符编码
+void generateCT(Bitmap* code, int length, PFCTable* table, BinNodePosi(char) v)
+{
+    if(IsLeaf(*v))
+    {
+        table->put(v->data, code->bits2string(length));
+        return;
+    }
+    if(HasChild(*v))
+    {
+        code->clear(length);
+        generateCT(code, length + 1, table, v->lc);
+    }
+    if( HasRChild(*v) )
+    {
+        code->set(length);
+        generateCT(code, length + 1, table, v->rc);
+    }
+}
+
+// 构造编码表
+PFCTable* generateTable( PFCTree* tree )
+{
+    PFCTable* table = new PFCTable;
+    Bitmap* code = new Bitmap;
+    generateCT( code, 0, table, tree->root() );
+    release(code);
+    return table;
+}
+
+int encode( PFCTable* table, Bitmap& codeString, char* s )
+{
+    int n = 0;
+    for( size_t m = strlen(s), i = 0; i < m; i++ )
+    {
+        char** pCharCode = table->get(s[i]);
+        if(!pCharCode)
+            pCharCode = table->get(s[i] + 'A' - 'a');
+        if(!pCharCode)
+            pCharCode = table->get( ' ' );
+        printf( "%s", *pCharCode );			// 输出当前字符的编码
+        for( size_t m = strlen(*pCharCode), j = 0; j < m; j++ )
+            '1' == *(*pCharCode + j) ? codeString.set(n++) : codeString.clear(n++);
+    }
+    return n;
+}
+
+void decode( PFCTree* tree, Bitmap& code, int n )
+{
+    BinNodePosi(char) x = tree->root();
+    for( int i = 0; i < n; i++ )
+    {
+        x = code.test(i) ? x->rc : x->lc;
+        if(IsLeaf(*x))
+        {
+            printf("%c", x->data);
+            x = tree->root();
+        }
+    }
+}
+```
+
+```c++
+// huffman编码树
+#define N_CHAR (0x80 - 0x20);
+struct HuffChar
+{
+    char ch;
+    int weight;
+    HuffChar(char c = '^', int w = 0) : ch(c), weight(w) { };
+    bool operator<(HuffChar const& hc )
+    {
+        return weight > hc.weight;	// 故意大小颠倒
+    }
+    bool operator==(HuffChar const& hc )
+    {
+        return weight == hc.weight;
+    }
+}
+#define HuffTree BinTree<HuffChar>
+#include "../List/List.h";
+typedef List<HuffTree*> HuffForest;
+
+#include "../Bitmap/Bitmap.h"
+typedef Bitmap HuffCode;
+
+#include "../Hashtable/Hashtable.h";
+typedef Hashtable<char, char*> HuffTable;
+
+int main(int argc, char* argv )
+{
+    int* freq = statistics(argv[1]);
+    Hufforest* forest = initForest(freq);
+    release(freq);
+    HuffTree* tree = generateTree(forest);
+    release(forest);
+    HuffTable* table = generateTable(tree);
+    for( int i = 2; i < argc; i++ )
+    {
+        Bitmap* codeString = new Bitmap;
+        int n = encode(table, codeString, argv[i]);
+        decode(tree, codeString, n);
+        release(codeString);
+    }
+    release(table);
+    release(tree);
+    return 0;
+}
+
+int* statistics(char* sample_text_file)
+{
+    int* freq = new int[N_CHAR];
+    memset(freq, 0, sizeof(int)*N_CHAR);
+    FILE* fp = fopen(sample_text_file, "r");
+    for( char ch; 0 < fscanf(fp, "%c", &ch); )
+        if(ch >= 0x20)
+            freq[ch-0x20]++;
+    fclose(fp);
+    return freq;
+}
+
+HuffForest* initForest(int* freq)
+{
+    HuffForest* forest = new HuffForest;
+    for( int i = 0; i < N_CHAR; i++ )
+    {
+        forest->insert(i, new HuffTree);
+        forest->last()->data->insertAsRoot(HuffChar(0x20+i, freq[i]));
+    }
+    return forest;
+}
+
+HuffTree* minHChar( HuffForest* forest )
+{
+    // ListNodePosi(HuffTree*) p = forest->first();
+    // ListNodePosi(HuffTree*) minChar = p;
+    // 上面是源码，增加的ListNodePosi是没用的，多加的？记得去视频课上查看
+    (HuffTree*) p = forest->first();
+    (HuffTree*) minChar = p;
+    int minWeight = p->data->root()->data.weight;
+    while(forest->valid(p = p->succ))
+        if(minWeight > p->data->root()->data.weight)
+        {
+            minWeight = p->data->root()->data.weight;
+            minChar = p;
+        }
+    return forest->remove(minChar);
+}
+
+HuffTree* generateTree(HuffForest* forest)
+{
+    while(1 < forest->size())
+    {
+        HuffTree* T1 = minChar(forest);
+        HuffTree* T2 = minCHar(forest);
+        HuffTree* S = new HuffTree();
+        S->insertAsRoot(HuffChar('^', T1->root->data.weight + T2->root->data.weight));
+        S->attachAsLC(S->root(), T1);
+        S->attachAsRC(S->root(), T2);
+        forest->insertAsLast(S);
+    }
+    return forest->first()->data;
+}
+
+static void generateCT(Bitmap* code, int length, huffTable* table, BinNodePosi(HuffChar) v)
+{
+    if(IsLeaf(*v))
+    {
+        table->put(v->data.ch, code->bits2string(length));
+        return;
+    }
+    if(HasLChild(*v))
+    {
+        code->clear(length);
+        generateCT(code, length + 1, table, v->lc);
+    }
+    if(HasRChild(*v))
+    {
+        code->set(length);
+        generateCT(code, length + 1, table, v->rc);
+    }
+}
+
+HuffTable* generateTable(HuffTree* tree)
+{
+    HuffTable* table = new HuffTable;
+    Bitmap* code = new Bitmap;
+    generateCT(code, 0, table, tree->root() );
+    release(code);
+    return table;
+}
+
+int encode(HuffTable* table, Bitmap* codeString, char* s)
+{
+    int n = 0;
+    for(size_t m = strlen(s), i = 0; i < m; i++)
+    {
+        char** pCharCode = table->get(s[i]);
+        if(!pCharCode) pCharCode = table->get(s[i] + 'A' - 'a');
+        if(!pCharCode) pCHarCode = table->get(' ');
+        printf("%s", *pCharCode);
+        for(size_t m = strlen(*pCharCode), j = 0; j < m; j++)
+        {
+            '1' == *(*pCharCode+j) ? codeString->set(n++) : codeString->clear(n++);
+        }
+    }
+    printf("\n");
+    return n;
+}
+
+int decode(HuffTree* tree, Bitmap* code, int n)
+{
+    BinNodePosi(HuffChar) x = tree->root();
+    for( int i = 0; i < n; i++)
+    {
+        x = code->test(i) ? x->rc : x->lc;
+        if(IsLeaf(*x))
+        {
+            printf("%c", x->data.ch);
+            x = tree->root();
+        }
+    }
+}
+```
+
 
 
 ## 图
+
+### 抽象数据类型
+
+#### Graph模板类
+
+```c++
+typedef enum { UNDISCOVERD, DISCOVERED, VISITED } VStatus;				// 顶点状态
+typedef enum { UNDETERMINED, TREE, CROSS, FORWARD, BACKWARD } EType;	// 边在遍历树中所属的类型
+
+template <typename Tv, typename Te>									// 边在遍历树中所属的类型
+class Graph
+{		// 图Graph模板类
+private:
+	void reset()
+    {		// 所有顶点、边的辅助信息复位
+        for ( int i = 0; i < n; i++ )
+        {
+            status(i) = UNDISCOVERED;
+            dTime(i) = fRime(i) = -1;
+            parent(i) = -1;
+            priority(i) = INT_MAX;
+            for ( int j = 0; j < n; j++ )
+            {
+                if ( exists( i, j ) ) type(i, j) = UNDETERMINED;
+            }
+        }
+    }
+    void BFS( int, int& );						// （连通域）广度优先搜索算法
+    void DFS( int, int& );						// （连通域）深度优先搜索算法
+    void BCC( int, int&, Stack<int>& );			// （连通域）基于DFS的双连通分量分解算法
+    bool TSort(int, int&, Stack<Tv>* );			// （连通域）基于DFS的拓扑排序算法
+    template <typename PU> void PFS( int, PU );	// （连通域）优先级搜索框架
+}
+
+template <typename Tv, typename Te>
+void Graph<Tv, Te>::bfs( int s )
+{
+    reset();
+    int clock = 0;
+    int v = s;
+    do
+        if( UNDISCOVERED == status(v) )
+            BFS( v, clock);
+    while ( s != ( v = ( ++v % n ) ) );
+}
+
+template <typename Tv, typename Te>
+void Graph<Tv, Te>::BFS( int v, int* clock )
+{
+    Queue<int> Q;
+    status(v) = DISCOVERED;
+    Q.enqueue(v);
+    while( !Q.empty() )
+    {
+        int v = Q.dequeue();
+        dTime(v) = ++clock;
+        for ( int u = firstNbr(v); -1 < u; u = nextNbr(v, u) )
+        {
+            if( UNDISCOVERED == status(u) )
+            {
+                status(u) = DISCOVERED;
+                Q.enqueue(u);
+                type(v, u) = TREE;
+                parent(u) = v;
+            }
+            else
+            {
+                type(v, u) = CROSS;
+            }
+        }
+        status(v) = VISITED;
+    }
+}
+```
 
