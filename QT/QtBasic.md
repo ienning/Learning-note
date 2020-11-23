@@ -181,3 +181,12 @@ QWidget是所有用户界面类的基类，它的父类是QObject和QPaintDevie�
 #### QDialogButtonBox（按钮框）
 
 1. QDialogButtonBox是直接继承自QWidget类的。把多个按钮组织在一起，比如关闭某个窗口时，可能会弹出，一个对话框，有YES和NO的按钮进行选择，这就是QDialogButtonBox。
+
+#### QButtonGroup
+
+#### QGroupBox
+
+- `void clicked(bool checked = false);`发送实际同其它clicked信号，但要注意：若调用setChecked()发不会发送该信号。
+
+### 带边框的部件
+

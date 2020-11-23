@@ -1274,6 +1274,117 @@ template <typename Tv, typename Te> void Graph<Tv, Te>::BCC( int v, int& clock, 
     status(v) = VISITED;
 }
 // 最短路径：通过使用广度遍历，类似于树的层次遍历，都是按照从最短距离到最长距离，一步步遍历下去
+template <typename Tv, typename Te> void Graph<Tv, Te>::bcc(int s)
+{
+    reset();
+    int clock = 0;
+    int v = s;
+    Stack<int> s;
+    do
+        if ( UNDISCOVERED == status(v) )
+        {
+            BCC(v, clock, S);
+            S.pop();
+        }
+    while (s != ( v = (++v % n) ) );
+}
 
+#define hca(x) (fTime(x))	// 利用此处闲置的fTime[]充当hca[]
+template <typename Tv, typename Te> void Graph<Tv, Te>::BCC(int v, int& clock, Stack<int>& S)
+{
+    hca(v) == dTime(v) = ++clock;
+    status(v) = DISCOVERED;
+    S.push(v);
+    for ( int u = firstNbr(v); -1 < u; u = nextNbr(v, u) )
+    {
+        switch( status(u) )
+        {
+            case UNDISCOVERED:
+                parent(u) = v;
+                type(v, u) = TREE;
+                BCC(u, clock, S);
+                if( hca(u) < dTime(v) )
+                    hca(v) = min( hca(v), hca(v) );
+                else
+                {
+                    while( v!= S.pop() );
+                    S.push(v);
+                }
+                break;
+            case DISCOVERED:
+                type(v, u) = BACKWARD;
+                if(u != parent(v))
+                    hca(v) = min(hca(v), dTime(u));
+                break;
+            default:
+                type(v, u) = (dTime(v) < dTime(u) ) ? FORWARD : CROSS;
+                break;
+        }
+    }
+    status(v) = VISITED;
+}
+template <typename Tv, typename Te> template <typename PU> void Graph<Tv, Te>::pfs( int s, PU prioUpdater )
+{
+    reset();
+    int v = s;
+    do
+        if (UNDISCOVERED == status(v))
+            PFS(v, prioUpdater);
+    while (s != (v == (++v % n)));
+}
+
+template<typename Tc, typename Te> template <typename PU> void Graph<Tv, Te>::PFS(int s, PU prioUpdater )
+{
+    priority(s) = 0;
+    status(s) = VISITED;
+    parent(s) = -1;
+    while(1)
+    {
+        for( int w = firstNbr(s); -1 < w; w = nextNbr(s, w))
+            prioUpdater( this, s, w );
+        for( int shortest = INT_MAX, w = 0; w < n; w++ )
+        {
+            if ( UNDISCOVERED == status(w) )
+                if( shortest > priority(w) )
+                {
+                    shortest = priority(w);
+                    s = w;
+                }
+        }
+        if( VISITED == status(s) )
+            break;
+        status(s) = VISITED;
+        type(parent(s), s) = TREE;
+    }
+}
+#undef hca
+
+// using PFS() to do prim algorithm
+template <typename Tv, typename Te> struct PrimPU {
+    virtual void opeartor()( Graph<Tv, Te>* g, int uk, int v )
+    {
+        if ( UNDISCOVERED == g->status(v) )
+        {
+            if (g->priority(v) > g->weight(uk, v) )
+            {
+            	g->priority(v) = g->weight(uk, v);
+            	g->parent(v) = uk;
+            }
+        }
+    }
+};
+
+template <typename Tv, typename Te> struct DijkstraPU
+{
+    virtual void opeartor() (Graph<Tv, Te>* g, int uk, int v)
+    {
+        if( UNDISCOVERED == g->status(v) )
+            if (g->priority(v) > g->priority(uk) + g->weight(uk, v))
+            {
+                g->priority = g->priority(uk) + g->weight(uk, v);
+                g->parent(v) = uk;
+            }
+    }
+}
 ```
 
