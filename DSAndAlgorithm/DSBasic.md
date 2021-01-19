@@ -1,3 +1,5 @@
+[TOC]
+
 # 数据结构
 
 ## 向量
@@ -1386,5 +1388,407 @@ template <typename Tv, typename Te> struct DijkstraPU
             }
     }
 }
+```
+
+## 搜索树
+
+```c++
+#include "../BinTree/BinTree.h"
+
+template <typename T> class BST: public BinTree<T>
+{
+protected:
+    BinNodePosi(T) _hot;
+    BinNodePosi(T) connect34(BinNodePosi(T), BinNodePosi(T), BinNodePosi(T), BinNodePosi(T), BinNodePosi(T), BinNodePosi(T), BinNodePosi(T));
+public:
+    virtual BinNodePosi(T) & search (const T& e);
+    virtual BinNodePosi(T) insert (const T& e);
+    virtual bool remove( const T& e );
+    
+};
+template <typename T> static BinNodePosi(T) & searchIn( BinNodePosi(T) & v, const T& e, BinNodePosi(T) & hot )
+{
+    if( !v || ( e == v->data ) )
+        return v;
+    hot = v;
+    return searchIn((( e < v->data ) ? v->lc : v->rc), e, hot);
+}
+
+template <typename T> BindNodePosi(T) & BST<T>::search( const T& e)
+{
+    return searchIn(_root, e, _hot=NULL);
+}
+
+template <typename T> BindNodePosi(T) BST<T>::insert( const T& e )
+{
+    BindNodePosi(T) & x = search(e);
+    if (x)
+        return x;
+    x = new BinNode<T>(e, _hot);
+    _size++;
+    updateHightAbove(x);
+    return x;
+}
+
+template <typename T> bool BST<T>::remove( const T& e)
+{
+    BinNodePosi(T) &x = search(e);
+    if (!x)
+        return false;
+    removeAr(x, _hot);
+    _size--;
+    updateHeightAbove(_hot);
+    return true;
+}
+
+template <typename T> static BindNodePosi(T) removeAt(BindNodePosi(T) & x, BindNodePosi(T) & hot)
+{
+    BinNodePosi(T) w = x;
+    BinNodePosi(T) succ = NULL;
+    if( !HasLChild(*x) )
+        succ = x = x->rc;
+    else if ( !HasRChild(*x) )
+        succ = x= x->lc;;
+    else
+    {
+        w = w->succ();
+        swap( x->data, w->data );
+        BinNodePosi(T) u = w->parent;
+        (( u == x) ? u->rc : u->lc ) = succ = w->rc;
+    }
+    hot = w->parent;
+    if ( succ )
+        succ->parent = hot;
+    release( w->data );
+    release( w );
+    return succ;
+    
+}
+```
+
+
+
+```c++
+#include "../BST/BST.h"
+#define Balanced(x) ( stature( (x).lc ) == stature( (x).rc ) )
+#define BalFac(x) ( stature( (X).lc ) - stature( (x).rc ) )
+#define AvlBalanced(x) ( ( -2 < BalFac(X) ) && ( BalFac(x) < 2 ) )
+template <typename T> class AVL : public BST<T>
+{
+public:
+    BinNodePosi(T) insert( const T& e );
+    bool remove( const T& e);
+};
+
+#define tallerChild(x) ( \ 
+    stature( (x)->lc ) > stature( (x)->rc ) ? (x)->lc : ( \ 
+    stature( (x)->lc ) < stature( (x)->rc ) ? (x)->rc : ( \ 
+    IsLChild( *(x) ) ? (x)->lc : (x)->rc \
+                                                        ) \
+                                                        ) \
+)
+
+template <typename T> BinNodePosi(T) AVL<T>::insert( const T& e )
+    {
+        BinNodePosi(T) & x = search(e);
+        if(x)
+            return x;
+        BinNodePosi(T) xx = x = new BinNode<T>( e, _hot );
+        _size++;
+        for ( BinNodePosi(T) g = _hot; g; g = g->parent )
+        {
+            if ( !AvlBalanced(*g))
+            {
+                FromParentTo(*g) = rotateAt( tallerChild( tallerChild(g) ) );
+                break;
+            }
+            else
+                updateHeight(g);
+		}
+        return xx;
+    }
+
+template <typename T> bool AVL<T>::remove( const T& e )
+{
+    BinNodePosi(T) & x = search(e);
+    if( !x )
+        return false;
+    removeAt( x, _hot );
+    _size--;
+    for ( BinNodedPosi(T) g = _hot; g; g = g->parent )
+    {
+        if (!AvlBalanced( *g ) )
+            g = FromParentTo( *g ) = rotateAt( tallerChild( tallerChild( g ) ) );
+        updateHeight( g ); 
+    }
+    return true;
+}
+
+// 平衡树“3+4”操作
+template <typename T> BinNodePosi(T) BST<T>::connect34 (
+	BinNodePosi(T) a, BinNodePosi(T) b, BinNodePosi(T) c,
+	BinNodePosi(T) T0, BinNodePosi(T) T1, BinNodePosi(T) T2, BinNodePosi(T) T3
+)
+{
+    a->lc = T0;
+    T0->parent = a;
+    a->rc = T1;
+    T1->parent = T1;
+    updateHeight(a);
+    b->lc = a;
+    a->parent = b;
+    b->rc = c;
+    c->parent = b;
+    c->lc = T2;
+    T2->parent = c;
+    c->rc = T3;
+    T3->parent = c;
+    updateHeight(c);
+    updateHeight(b);
+    return b;
+    
+}
+
+// BST节点旋转变换统一算法（3节点 + 4子树），返回调整之后局部子树根节点的位置
+template <typename T> BinNodePosi(T) BST<T>::rotateAt(BinNodePosi(T) v)
+{
+    BinNodePosi(T) p = v->parent;
+    BinNodePosi(T) g = p->parent;
+    if (IsLChild(*p))
+    {
+        if (IsLChild(*v))
+        {
+        	p->parent = g->parent;   
+            return connect34(v, p, g, v->lc, v->rc, p->rc, g->rc);
+        }
+        else
+        {
+            v->parent = g->parent;
+            return connect34(p, v, g, p->lc, v->lc, v->rc, g->rc);
+        }
+    }	
+    else
+    {
+        if (ISLChild(*v))
+        {
+            v->parent = g->parent;
+            return conenct34(g, v, p, g->lc, v->lc, v->rc, p->rc);
+        }
+        else
+        {
+            p->parent = g->parent;
+            return connect34(g, p, v, g->lc, p->lc, v->lc, v->rc);
+        }
+    }
+}
+```
+
+## 高级搜索树
+
+**数据局部性**包含以下两个方面：
+
+1. 刚刚被访问的元素，极有可能在不久后的将来被再次访问
+2. 被访问的元素，极有可能在不久之前被访问的某个元素附近。
+
+### 伸展树
+
+```c++
+#include "../BST/BST.h"	// 基于BST实现Splay
+template <typename T> class Splay : public BST<T>
+{
+protected:
+    BinNodePosi(T) splay(BinNodePosi(T) v);
+public:
+    BinNodePosi(T) & search(const T& e);	 // 查找
+    BinNodePosi(T) insert(const T& e);		 // 插入
+    bool remove(const T& e);				// 删除
+};
+// 在节点*p与*lc（可能为空）之间父（左）子关系
+template <typename NodePosi> inline void attachAsLChild( NodePosi p, NodePosi lc)
+{
+    p->lc = lc;
+    if (lc)
+        lc->parent = p;
+}
+
+// 在节点*p与*rc（可能为空）之间建立父（右）子关系
+template <typename NodePosi> inline void attachAsRChild( NodePosi p, NodePosi rc)
+{
+    p->rc = rc;
+    if (rc)
+    {
+        rc->parent = p;
+    }
+}
+
+// Splay树伸展算法：从节点v出发逐层伸展
+template <typename T> BinNodePosi(T) splay(BinNodePosi(T) v)
+{
+    if (!v)
+        return;
+    BinNodePosi(T) p;
+    BinNodePosi(T) g;
+    while ((p = v->parent) && (g = p->parent))
+    {
+        BinNodePosi(T) gg = g->parent;
+        if(IsLChild(*v))
+        {
+            if(IsLChild(*p))
+            {
+                attachAsLChild(g, p->rc);
+                attachAsLChild(p, v->rc);
+                attachAsRChild(p, g);
+                attachAsRChild(v, p);
+            }
+            else
+            {
+                attachAsLChild(g, v->rc);
+                attachAsLChild(v, g);
+                attachAsRChild(p, v->lc);
+                attachAsLChild(v, p);
+            }
+        }
+        else
+        {
+            if(IsRChild(*v))
+            {
+                attachAsRChild(g, p->lc);
+                attachAsRChild(p, v->lc);
+                attachAsLChild(v, p);
+                attachAsLChild(p, g);
+            }
+            else
+            {
+             	attachAsRChild(g, v->lc);
+                attachAsLChild(p, v->rc);
+                attachAsLChild(v, g);
+                attachAsRChild(v, p);
+            }
+        }
+        if (!gg)
+            v->parent = NULL;
+        else
+        {
+            ( g == gg->lc) ? attachAsLChild(gg, v) : attachAsRChild(gg, v);
+        }
+        updateHeight(g);
+        updateHeight(p);
+        updateHeight(v);
+    }
+    if (p = v->parent)
+    {
+        if (IsLChild(*v))
+        {
+            attachAsLChild(p, v->lc);
+            attachAsRChild(v, p);
+        }
+        else
+        {
+            attachAsRChild(p, v->lc);
+            attachAsLChild(v, p);
+        }
+        updateHeight(p);
+        updateHeight(v);
+    }
+    v->parent = NULL;
+    return v;
+}
+
+template <typename T> BinNodePosi(T) & Splay<T>::search(const T& e)
+{
+    BinNodePosi(T) p = searchIn( _root, e, _hot=NULL);
+    _root = splay(p ? p : _hot);	// 将最后一个访问的节点伸展至于根
+    return _root;
+}
+
+// 将元素e插入伸展树中
+template <typename T> BinNodePosi(T) Splay<T>::insert(const T& e)
+{
+    if (!_root )
+    {
+        _size++;
+        return _root = new BinNode<T>(e);
+    }
+    if (e == search(e)->data)
+        return _root;
+    _size++;
+    BinNodePosi(T) t = _root;
+    if (_root->data < e)
+    {
+        t->parent = _root = new BinNode<T>(e, NULL, t, t->rc);
+        if (HasRChild(*t))
+        {
+            t->rc->parent = _root;
+            t->rc = NULL;
+        }
+    }
+    else 
+    {
+        t->parent = _root = newBinnode<T>(e, NULL, t->lc, t);
+        if (HasLChild(*t))
+        {
+            t->lc->parent = _root;
+            t->lc = NULL;
+        }
+    }
+    updateHeightAbove(t);
+    return _root;
+}
+
+template <typename T> bool Splay<T>::remove( const T& e)
+{
+    if (!_root || (e != search(e)->data))
+        return false;
+    BinNodePosi(T) w = _root;
+    if (!HasLChild(*_root))
+    {
+        _root = _root->rc;
+        if (_root)
+            _root->parent = NULL;
+    }
+    else if (!HasRChild(*_root))
+    {
+        _root = _root->lc;
+        if (_root)
+            _root->parent = NULL;
+    }
+    else
+    {
+        BinNodePosi(T) lTree = _root->lc;
+        lTree->parent = NULL;
+        _root->lc = NULL;
+        _root = _root->rc;
+        _root->parent = NULL;
+        search(w->data);
+        _root->lc = lTree;
+        lTree->parent = _root;
+    }
+    release(w->data);
+    release(w);
+    _size--;
+    if(_root)
+        updateHeight(_root);
+    return true;
+}
+```
+
+### B-树
+
+```c++
+
+```
+
+
+
+### 红黑树
+
+```c++
+
+```
+
+### kd-树
+
+```c++
+
 ```
 
