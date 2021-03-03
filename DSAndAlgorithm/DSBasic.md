@@ -1775,6 +1775,260 @@ template <typename T> bool Splay<T>::remove( const T& e)
 ### B-树
 
 ```c++
+#include "../vector/vector.h"
+#include "BTNode.h"
+#define BTNodePosi(T) BTNode<T>*
+
+template <typename T> struct BTNode
+{
+    BTNodePosi(T) parent;
+    Vector<T> key;
+    Vector<BTNodePosi(T)> child;
+    BTNode()
+    {
+        parent = NULL;
+        child.insert(0, NULL);
+    }
+    BTNode( T e, BTNodePosi(T) lc = NULL, BTNodePosi(T) rc = NULL)
+    {
+        parent = NULL;
+        key.insert(0, e);
+        child.insert(0, lc);
+        child.insert(1, rc);
+        if(lc) lc->parent = this;
+        if(rc) rc->parent = this;
+    }
+};
+
+template <typename T> class BTree
+{
+protected:
+    int _size;			// 存放的关键码总数
+    int _order;			// B-树的阶次，至少3（创建时指定，一般不能修改）
+    BTNodePosi(T) _root;	// 根节点
+    BTNodePosi(T) _hot;		// BTree::search()最后访问的非空(除非树空)的节点位置
+    void solveOverflow(BTNodePosi(T));	// 因插入而上溢之后的分裂处理
+    void solveUnderflow(BTNodePosi(T));	// 因删除而下溢之后的合并处理
+public:
+    BTree (int order = 3): _order(order), _size(0)
+    {
+        _root = new BTNode<T>();
+    }
+    ~BTNode()
+    {
+        if(_root)
+            release(_root);
+    }
+    int const order()
+    {
+        return _order;
+    }
+    
+    int const size()
+    {
+        return _size;
+    }
+    
+    BTNodePosi(T) & root()
+    {
+        return _root;
+        
+    }
+    
+    bool empty() const
+    {
+        return !_root;
+    }
+    
+    BTNodePosi(T) search(const T& e);
+    bool insert( const T& e);
+    bool remove( const T& e);
+    
+}
+template <typename T> void BTree::solveOverflow(BTNodePosi(T) v)
+{
+    if (_order >= v->child.size())
+        return;
+    // 从v的中间关键码开始拆分结点v变成两个结点
+    Rank s = _order / 2;
+    BTNodePosi(T) u = new BTNode<T>();
+    for (Rank j = 0; j < _order - s - 1; j++)
+    {
+        u->key.insert(j, v->key.remove(s+1));
+        u->child.insert(j, v->child.remove(s+1));
+    }
+    u->child.insert(_order-s-1, v->child.remove(s+1));
+
+    if (u->child[0])
+    {
+    	for(Rank j = 0; j < _order-s; j++)
+    	{
+        	u->child[j]->parent = u;
+    	}
+    }
+    // 将关键码上升到父节点
+    BTNodePosi(T) p = v->parent;
+    if(!p)
+    {
+        _root = p = new BTNode<T>();
+        v->parent = p;
+        p->child[0] = v;
+    }
+    Rank r = 1 + p->key.search(v->key[0]);
+    p->key.insert(r, v->key.remove(s));
+    p->child.insert(r+1, u);
+    u->parent = p;
+    
+    sloveOverflow(p);
+}
+
+template <typename T> void BTree::solveUnderflow(BTNodePosi(T) v)
+{
+    if ((_order+1)/2 <= v->child.size())
+        return;
+    BTNodePosi(T) p = v->parent;
+    if (!p)
+    {
+        // v作为树根且有唯一的子节点
+        if (!v->key.size() && v->child[0])
+        {
+            _root = v->child[0];
+            _root->parent = NULL;
+            v->child[0] = NULL;
+            release(v);
+        }
+        return;
+    }
+    Rank r = 0;
+    while ( p->child[r] != v )
+        r++;
+    // 情况1：向左兄弟借关键码
+    if (r > 0)
+    {
+        BTNodePosi(T) ls = p->child[r-1];
+        if((_order+1)/2 < ls->child.size())
+        {
+            v->key.insert(0, p->key[r-1]);
+            p->key.insert(r-1, ls->key.remove(ls->key.size() - 1));
+            v->child.insert(0, ls->child.remove(ls->child.size() - 1));
+            if (v->child[0])
+                v->child[0]->parent = v;
+            return;
+        }
+    }
+    // 情况2：向右兄弟借关键码
+    if (r < p->child.size() - 1)
+    {
+        BTNodePosi(T) rs = p->child[r+1];
+        if ((_order+1/2) < rs->child.size())
+        {
+            v->key.insert(v->key.size(), p->key[r]);
+            p->key[r] = rs->key.remove(0);
+            v->child.insert(v->child.size(), rs->child.remove(0));
+            if (p->child[v->child.size-1])
+            {
+                p->child[v->child.size-1]->parent = v;
+            }
+            return;
+        }
+    }
+    // 情况3：左右兄弟可能为空（不会同时为空），或者左右兄弟太瘦
+    if(0 < r)
+    {
+        // 和左兄弟合并
+        
+        BTNodePosi(T) ls = p->child[r-1];
+        ls->key.insert(ls->key.size(), p->key.remove(r-1));
+        p->child.remove(r);
+        ls->child.insert(ls->child.size(), v->child.remove(0));
+        if (ls->child[ls->child.size() - 1])
+			ls->child[ls->child.size-1]->parent = ls;
+        while (!v->key.empty())
+        {
+            ls->key.insert(ls->key.size(), v->key.remove(0));
+            ls->child.insert(ls->child.size(), v->child.remove(0));
+            if (ls->child[ls->child.size() - 1])
+                ls->child[ls->child.szie() - 1]->parent = ls;
+        }
+        release(v);
+    }
+    else
+    {
+        // 和右兄弟合并
+        BTNodePosi(T) rs = p->child[r+1];
+        rs->key.insert(0, p->key.remove(r));
+        p->child.remove(r);
+        rs->child.insert(0, v->child.remove(v->child.size()-1));
+        if(rs->child[0])
+            rs->child[0]->parent = rs;
+        while (!v->key.empty())
+        {
+            rs->key.insert(0, v->key.remove(v->key.size()-1));
+            rs->child.insert(0, v->child.remove(v->child.size()-1));
+        	if (rs->child[0])
+            {
+                rs->child[0]->parent = rs;
+            }
+        }
+        release(v);
+            
+    }
+    solveUnderflow(p);
+    return;
+    
+}
+
+template <typename T> void BTree::search(const T& e)
+{
+    BTNodePosi(T) v = _root;
+    _hot = NULL;
+    while (v)
+    {
+        Rank r = v->key.search(e);		// 在当前节点找到不大于e的最大关键码
+        if (( 0 <= r ) && (e == v->key[r] ) )
+        {
+            return v;
+        }
+        _hot = v;
+        v = v->child[r+1];
+    }
+    return NULL;
+}
+
+template <typename T> bool BTree::insert(const T& e)
+{
+    BTNodePosi(T) v = search(e);
+    if (v)
+        return false;
+    Rank r = _hot->key.search(e);
+    _hot->key.insert(r+1, e);
+    _hot->child.insert(r+2, NULL);
+    _size++;
+    solveOverflow(_hot);		// 如果有必要，需要做分裂
+    return true;
+}
+
+template <typename T> bool BTree::remove(const T& e)
+{
+    BTNodePosi(T) v = search(e);
+    if (!v)
+        return false;
+    Rand r = v->key.search(e);
+    if (v->child[0])
+    {
+        BTNodePosi(T) u = v->child[r+1];
+        while (u->child[0])
+            u = u->child[0];
+        v->key[r] = u->key[0];
+        v = u;
+        r = 0;
+    }
+    v->key.remove(r);
+    v->child.remove(r+1);	
+    _size--;
+    solveUnderflow(v);
+    return true;
+}
 
 ```
 

@@ -251,6 +251,8 @@ struct DYNINTS {
 
 ### 类的声明与定义
 
+类的定义是使用class关键字而非struct，二者的唯一区别是，struct和class的默认访问权限不太一样，struct默认是public，class默认是private
+
 ```c++
 class A {
     public:
@@ -330,8 +332,8 @@ B::B(A a, int b) : a(a), b(b)
 ##### 构造函数初始化的目的意义
 
 - 在构造对象时，同步构造内部对象
-- 部分成员（常量与引用）只能初始化，不嗯给你赋值
-- 部分成员（类的对象）如果复制，将导致两次构造
+- 部分成员（常量与引用）只能初始化，不能给你赋值，二者是不一样的。
+- 部分成员（类的对象）如果赋值，将导致两次构造
   - 在分配内存时，调用缺省构造函数构造，然后执行构造函数体内的赋值语句再次构造，效率不佳
   - 若类没有缺省构造函数，则会导致问题
 
@@ -722,6 +724,61 @@ class Derived: public Base
 
 - 使用面向对象架构实现动态数组库
 - 使用面向对象架构实现抽象链表库
+
+## IO库
+
+### 和IO相关的包
+
+W开头的是宽字符（wchar_t类型）版本。
+
+- iostream
+  - istream，wistream从流中读取数据
+  - ostream，wostream向流写入数据
+  - iostream，wostream读写流
+- fstream
+  - ifstream，wifstream从文件读取数据
+  - ofstream，wofstream向文件写入数据
+  - fstream，wfstream读写文件
+- sstream
+  - istringstream，wistringstream从string读取数据
+  - ostringstream，wostringstream向string写入数据
+  - stringsstream，wstringstream读写string
+
+### 文件IO
+
+#### 文件模式
+
+- in ：以读的方式打开
+- out ：以写的方式打开：如果不指定app模式（可以阻止ofstream清空指定文件内容），使用该方式或者直接使用ofstream默认模式时候文件的内容会被丢弃。
+- app ：每次写操作前均定位到文件末尾
+- ate ： 打开文件后立即定位到文件末尾
+- trunc ： 截断文件，在out也被设定的时候才可以被设定该模式
+- binary ： 以二进制方式进行IO
+- 保留被ofstream打开的文件中已有的数据的唯一方法是显示指定app或in模式
+
+### string流
+
+#### stringstream特有的操作
+
+- sstream strem		strm是一个未绑定的stringstream对象。sstream是头文件sstream中定义的一个类型
+- sstream strm(s)      strm是一个sstream对象，保存string s的一个拷贝。此构造函数是explicit的
+- strm.str()                 返回strm所保存的string的拷贝
+- strm.str(s)               将string s拷贝到strm中。返回void
+
+## 容器库
+
+- 顺序容器：
+- 关联容器：
+- 无序容器：
+
+### 顺序容器库
+
+- vector ：可变大小数组，支持快速随机访问。在尾部之外的位置插入或删除元素可能很慢
+- deque ：双端队列。支持快速随机访问。在头尾位置插入/删除速度很快
+- list ：      双向链表。只支持双向顺序访问。在list中任何位置进行插入/删除操作速度都很快
+- forward_list ：单向链表。只支持单向顺序访问。在链表任何位置进行插入/删除操作速度都很快
+- array ：   固定大小数组。支持快速随机访问。不能添加或删除元素。
+- string ：   与vector相似的容器，但专门用于保存字符。随机访问快。在尾部插入/删除速度快
 
 ## 操作符重载
 
