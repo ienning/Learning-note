@@ -2037,7 +2037,53 @@ template <typename T> bool BTree::remove(const T& e)
 ### 红黑树
 
 ```c++
+#include "../BST/BST.h"
 
+#define IsBlack(p) (!(p) || (RB_BLACK == (p)->color))	// 外部节点也视作黑节点
+#define IsRed(p) (!IsBlack(p))		// 非黑即红
+#define BlackHeightUpdated(x) ( \
+	/* RedBlack 高低更新条件 */ \
+    ( stature((x).lc) == stature((x).rc) ) && ((x).height == (IsRed(& x) ? stature((x).lc) : stature((x).lc)+1 )) \
+)
+
+template <typename T> class RedBlack : public BST<T>
+{
+protected:
+    void solveDouble(BinNodePosi(T) x);		// 双红修正
+    void solveDoubleBlack(BinNodePosi(T) x);	// 双黑修正
+    int updateHeight(BinNodePosi(T) x);		// 更新节点x的亮度
+public:
+    BinNodePosi(T) insert( const T& e);		// 插入
+    bool remove(const T& e);				// 删除
+    
+};
+
+template <typename T> int ReadBlack::updateHeight(BinNodePosi(T) x)
+{
+    x->height = max(stature(x->lc), stature(x->rc));
+    return IsBlack(x) ? x->height++ : x->height;
+}
+
+template <typename T> void solveDouble(binNodePosi(T) x)
+{
+    
+}
+
+template <typename T> void sloveDoubleBlack(BinNodePosi(T) x)
+{
+    
+    
+}
+
+template <typename T> BinNodePosi(T) insert(const T& e)
+{
+    
+}
+
+template <typename T> bool remove(const T& e)
+{
+    
+}
 ```
 
 ### kd-树
