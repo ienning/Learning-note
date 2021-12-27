@@ -20,3 +20,7 @@
 
 `Q_D(QWidget)`获取QWidgetPrivate的数据指针，能确保在调用可以根据需要调用任意一层的私有数据，因为QWidget类型可以自己定义
 
+## QObject解析
+
+在QObject.h文件中，定义了QObjectData对象，该对象是用来存储QObject对象的数据的
+
