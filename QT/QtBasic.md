@@ -146,7 +146,7 @@ QWidget是所有用户界面类的基类，它的父类是QObject和QPaintDevie�
 
 ## 4.Qt常用部件
 
-### 按钮部件
+### 4.1 按钮部件
 
 关系继承图
 
@@ -161,7 +161,7 @@ QWidget是所有用户界面类的基类，它的父类是QObject和QPaintDevie�
 
 按钮在按下的时候，会先执行按下状态，然后执行选中状态，若鼠标再次点击按钮时候，首先设置按下状态，然后再清除按钮的选择状态。在每次鼠标释放时会清除按钮的按下状态。
 
-#### QPushButton类（标准按钮）
+#### 4.1.1 QPushButton类（标准按钮）
 
 1. 默认按钮：是指当用户按下enter时，默认按钮会被自动按下
 2. 自动默认按钮：是指在满足一些条件时会自动成为默认按钮的按钮，比如当自动默认按钮获得焦点时，会自动成为默认按钮，普通按钮即使获得焦点也不会成为默认按钮。
@@ -176,7 +176,7 @@ QWidget是所有用户界面类的基类，它的父类是QObject和QPaintDevie�
   - 按下Enter（回车）键时，若自动默认按钮当前具有焦点，则按下自动默认按钮
   - 按下Enter（回车）键时，若对话框中有自动默认按钮但没有默认按钮，则按下当前具有焦点的自动默认按钮，若此时没有按钮具有焦点，则按下焦点链中的下一个自动默认按钮。
 
-### 容器部件
+### 4.2 容器部件
 
 - QDialogButtonBox（按钮框）
 - QButtonGrup（按钮组）
@@ -192,7 +192,7 @@ QWidget是所有用户界面类的基类，它的父类是QObject和QPaintDevie�
 
 - `void clicked(bool checked = false);`发送实际同其它clicked信号，但要注意：若调用setChecked()发不会发送该信号。
 
-### 带边框的部件
+### 4.3 带边框的部件
 
 #### QFrame类
 
@@ -200,7 +200,7 @@ QWidget是所有用户界面类的基类，它的父类是QObject和QPaintDevie�
 
 #### QLCDNumber类（LCD数字）
 
-### 输入部件
+### 4.4 输入部件
 
 #### QComboBox类（下拉列表、组合框）
 
@@ -208,7 +208,7 @@ QWidget是所有用户界面类的基类，它的父类是QObject和QPaintDevie�
 
 #### QValidator（行编辑器QLineEdit使用）
 
-### 旋转框（微调按钮）
+### 4.5 旋转框（微调按钮）
 
 #### QAbstractSponBox（旋转框或微调框）
 
@@ -221,7 +221,7 @@ QWidget是所有用户界面类的基类，它的父类是QObject和QPaintDevie�
 - QSpinBox类被设计用于处理整数和离散值集合，对于浮点值使用QDoubleSpinBox类实现。
 - QSpinBox类默认支持整数值，但是可以通过其内部成员函数进行拓展，以支持使用不用的字符串。
 
-### 时间系统
+### 4.6 时间系统
 
 时间系统类：QDate、QTime、QDateTime，QTimer、QDateTimeEdit、QDateEdit、QTimeEdit等
 
@@ -233,6 +233,32 @@ QWidget是所有用户界面类的基类，它的父类是QObject和QPaintDevie�
 #### QDate
 
 - 可以获得年月日，周，以及所在的年份的第几周，第几天，当前月份的第几天
+
+### 4.7 标题栏、工具栏和状态栏
+
+#### 4.7.1 菜单栏
+
+- QMenuBar（菜单栏）
+  - addMenu：添加QMenu
+  - addAction：添加QAction
+- QMenu
+  - addMenu：添加QMenu
+  - addAction：添加QAction
+    - 使用triggered()信号量出发信号槽
+
+#### 4.7.2 工具栏
+
+#### 4.7.3 状态栏
+
+显示的信息分为三类
+
+- 一般信息：通过`addWidget(QWidget)`添加，需要QLbale
+- 永久信息：永久显示的，通过`addPermanentWidget(QWidget, int)`添加
+- 临时信息：显示临时信息时候，会覆盖一般信息，设置设置显示时长，时间过后就会恢复为一般信息，通过`showMessage(QString)`添加，不需要标签（QLabel）。
+
+可以显示菜单栏中的信息，通过使用QAction的成员函数`setStatusTip(const QString&)`，参数为要显示的信息
+
+注意：如果状态栏有临时信息，只有在临时信息被清楚后，会显示之前添加的控件，比如按钮
 
 ## 5. 多线程
 
@@ -261,19 +287,9 @@ mutex->unlock();
 
 ## 6. 网络
 
-## 7.数据库
+## 7. Qt图形编程
 
-Qt实战中暂时没有什么新东西
 
-## 8.Qt调用Windows下的动态链接库
-
-Qt调用Winidwos下的动态库，如果使用lib（隐式链接），那么有三种
-
-- 第一种是在VS配置中的附加库目录栏中添加lib库，然后引用头文件就行了
-- 第二种是通过`#pragma comment(lib, "Test.lib")`的方式添加，也要添加头文件，记得也要设置lib的所在目录路径，可以在附件目录栏中的输入`$(OutDir)`，即在运行后所输出的文件的那一个目录里
-- 第三种，直接将lib直接拖拽到可视化的解决方案中，然后添加头文件就行了
-
-Dll也有自己的dllMain函数，如果采用隐式链接，也会调用dllMain，采用显示链接时，LoadLibrary()和FreeLibrary()都会调用dllMain()（详见《Qt实战》第279页）
 
 
 
