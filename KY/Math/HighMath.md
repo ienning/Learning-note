@@ -16,7 +16,7 @@
 
 `y' + p(x)y = Q(x)`的方程称为一阶线性微分方程，一般通过常数变易法或直接利用下面公式
 $$
-y = e^{p(x)dx[\int Q(x)e^{\int p(x)dx}dx + C]}
+y = e^{-\int p(x)dx[\int Q(x)e^{\int p(x)dx}dx + C]}
 $$
  伯努利方程（数学一）
 
@@ -105,7 +105,7 @@ x^ke^{\alpha x}[R^{(1)}_m(x)\cos \beta x \ + \ R^{(2)}_m(x)\sin \beta x], & \tex
 
 \end{cases}
 $$
-
+上述的结论可以将二阶常系数微分方程推导到高阶上。
 
 ## 第五章 多元函数微分学
 
