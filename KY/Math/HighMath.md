@@ -66,7 +66,7 @@ $$
 二阶常系数齐次微分方程的一般形式
 $$
 \begin{align}
-y'' + py' + qy &= 0 \tag{4.4.5} \label{eConstEq} \\
+y'' + py' + qy &= 0 \tag{4.4.5} \label{eq:ConstEq} \\
 r^2 + pr + q &= 0 &\text{$\eqref{eq:ConstEq}$的特征方程  }
 
 \end{align}
