@@ -241,3 +241,55 @@ $$
 
 ## 第六章 二次型
 
+**1. 二次型的定义及其矩阵表达式**
+$$
+f(x) = x^TAx \quad \text{二次型$f(x)$的矩阵表达式，为实对称矩阵} \tag{6.1}
+$$
+
+
+**2. 合同变换、二次型的合同标准型和规范型**
+$$
+\begin{align}
+x &= Cy \quad \text{$y_1, y_2,...,y_n$ 到 $x_1, x_2,...,x_n$的线性变换，若矩阵C可逆则称为可逆线性变换} \\
+f(x) &= x^TAx= (Cy)^TA(Cy) = y^T(C^TAC)y. \\
+B &= C^TAC \quad \text{A合同B，记作$A\approxeq B$} \tag{6.4} \\
+f(x) &= y^TBy = g(y) \quad \text{称为$f(x)$与$g(y)$为合同二次型}
+\end{align}
+$$
+公式6.4中称之为A合同B，f(x) = g(y)可知是同一个东西，A，B分别表征了不同的“形态”，在x和y的不同参考系下的同一个事物的不同形态。
+
+r(A) = r(B)，可逆线性变换不会改变二次型的秩。
+
+二次型的标准型、规范型
+$$
+d_1x_1^2 + d_2x_2^2 + ... + d_nx_n^2 \quad \text{标准型} \tag{6.6} \\
+d_1x_1^2 + d_2x_2^2 + ... + d_nx_n^2 \quad \text{$d_i$取值范围为-1, 0, 1；称之为规范型 } \\
+$$
+**3. 惯性定理**
+
+在6.6中，d\_i中的正项的个数为p，负项的个数为q，都是不变的，p称为正惯性指数，q称为负惯性指数。秩r = p + q，可逆线性变换不改变正、负惯性指数
+
+**4. 正定二次型及其判别**
+
+公式6.1中，若对任意的x=[x1, x2, ..., xn]^T != 0,均有x^TAx > 0，则称f为正定二次型，称二次型的对应矩阵A为正定矩阵。
+
+二次型正定的充要条件
+$$
+\begin{align}
+n元二次型f=x^TAx正定&{\Leftrightarrow} 对任意x \neq 0, 有x^TAx > 0（定义） \\
+		 &{\Leftrightarrow} f的正惯性指数p=n \\
+		 &{\Leftrightarrow} 存在可逆矩阵D，使A=D^TD \\
+		 &{\Leftrightarrow} A \approxeq E \\
+		 &{\Leftrightarrow} A的特征值\lambda_i>0(i=1,2,...,n) \\
+		 &{\Leftrightarrow} A的全部顺序主子式钧大于0
+\end{align}
+$$
+
+
+二次型正定的必要条件
+$$
+\begin{align}
+a_{ii}&>0(i=1,2,...,n) \\
+|A|&>0
+\end{align}
+$$
